@@ -1,7 +1,7 @@
 const part1 = () => {
   return lines.reduce((num, line) => num += getValidGame(line), 0)
 }
-const regex = /\d+\s.*?(?=,|$)/
+
 const getValidGame = (line) => {
   const gameSplit = line.split(':')
   const gameId = +gameSplit[0].split('Game ')[1]
