@@ -84,23 +84,31 @@ function getInRangeSeeds(seedRangeNumbers, sourceRangeNumbers) {
   const sourceMax = sourceStart + sourceRange
   let outliers = []
   let overlapped = null
-  let overlappedStart = null
 
   // In between
-  if (seedStart >= sourceStart && seedMax <= sourceMax) {
-    if (seedStart !== sourceStart) outliers.push([sourceStart, (seedStart - 1) - sourceStart])// outlier left
+  if (seedStart >= sourceStart && seedMax <= sourceMax) { // in between
+    if (seedStart !== sourceStart) outliers.push([sourceStart, (seedStart - 1) - sourceStart]) // outlier left
     if (seedMax !== sourceMax) outliers.push([seedMax + 1, ]) // outlier right
-    const outlierLeft = []
-    const outlierRight = []
-    outliers = [outlierLeft, outlierRight]
     overlapped = { start: seedStart, range: seedRange }
-
+  } else if (seedStart < sourceStart && seedMax <= sourceMax) { // Bottom
+    outliers.push([seedStart, (sourceStart - 1) - seedStart])
+    overlapped = { start: sourceStart, range: seedMax - sourceStart }
+  } else if (seedStart >= sourceStart && seedMax > sourceMax) { // Top
+    outliers.push([sourceMax + 1, seedMax - (sourceMax - 1)])
+    overlapped = { start: seedStart, range: sourceMax - seedStart }
+  } else if (seedStart < sourceStart && seedMax > sourceMax) { // All encompassing
+    outliers.push([seedStart, (sourceStart - 1) - seedStart]) // bottom
+    outliers.push([sourceMax + 1, seedMax - (sourceMax + 1)]) // top
   }
 
   return {
     overLapped,
     outliers: []
   }
+}
+
+function isInRange() {
+
 }
 
 function getSeedRanges(seeds) {
