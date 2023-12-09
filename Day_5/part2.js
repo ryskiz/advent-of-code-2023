@@ -1,40 +1,3 @@
-// dear god
-const lines = [
-  "seeds: 79 14 55 13",
-  "",
-  "seed-to-soil map:",
-  "50 98 2",
-  "52 50 48",
-  "",
-  "soil-to-fertilizer map:",
-  "0 15 37",
-  "37 52 2",
-  "39 0 15",
-  "",
-  "fertilizer-to-water map:",
-  "49 53 8",
-  "0 11 42",
-  "42 0 7",
-  "57 7 4",
-  "",
-  "water-to-light map:",
-  "88 18 7",
-  "18 25 70",
-  "",
-  "light-to-temperature map:",
-  "45 77 23",
-  "81 45 19",
-  "68 64 13",
-  "",
-  "temperature-to-humidity map:",
-  "0 69 1",
-  "1 0 69",
-  "",
-  "humidity-to-location map:",
-  "60 56 37",
-  "56 93 4",
-];
-
 const part2 = () => {
   const seedNumbers = lines.shift().split("seeds: ")[1].split(" ");
   const seedRanges = getSeedRanges(seedNumbers);
@@ -61,54 +24,106 @@ const part2 = () => {
     categoryMappings[currentCategory] = categoryMappings[currentCategory] || [];
 
     // push line to that category
-    const [destination, source, range] = lines.split(' ')
+    const [destination, source, range] = line.split(" ");
     categoryMappings[currentCategory].push([+destination, +source, +range]);
   }
 
   const categoryProgression = Object.keys(categoryMappings);
   let lowestNum = null;
-  for (let i = 0; i < seedNumbers.length; i++) {
-    const seedRange = seedNumbers[i];
+  for (let i = 0; i < seedRanges.length; i++) {
+    const seedRange = seedRanges[i];
+    const lowestLocationNumber = getLowestLocationNumber(
+      [[...seedRange, "seed-to-soil"]],
+      categoryMappings,
+      categoryProgression
+    );
 
-    // if (!lowestNum) lowestNum = locationNumber;
-    // lowestNum = Math.min(lowestNum, locationNumber);
+    lowestNum = getLowerNum(lowestNum, lowestLocationNumber);
   }
 
   return lowestNum;
 };
 
-function getInRangeSeeds(seedRangeNumbers, sourceRangeNumbers) {
-  const [seedStart, seedRange] = seedRangeNumbers
-  const [sourceStart, sourceRange] = sourceRangeNumbers
-  const seedMax = seedStart + seedRange
-  const sourceMax = sourceStart + sourceRange
-  let outliers = []
-  let overlapped = null
+function getLowestLocationNumber(
+  seedRange,
+  categoryMappings,
+  categoryProgression
+) {
+  let lowestRangeNumber = null;
+  while (seedRange.length) {
+    const seed = seedRange.shift();
+    const currentSeedRange = [seed[0], seed[1]];
+    const currentCategory = seed[2];
+    const currentCategoryMappings = categoryMappings[currentCategory];
+    for (let i = 0; i < currentCategoryMappings.length; i++) {
+      const [destination, source, range] = currentCategoryMappings[i];
+      const { overlapped, outliers } = getInRangeSeeds(
+        currentSeedRange,
+        [source, range],
+        destination
+      );
 
-  // In between
-  if (seedStart >= sourceStart && seedMax <= sourceMax) { // in between
-    if (seedStart !== sourceStart) outliers.push([sourceStart, (seedStart - 1) - sourceStart]) // outlier left
-    if (seedMax !== sourceMax) outliers.push([seedMax + 1, ]) // outlier right
-    overlapped = { start: seedStart, range: seedRange }
-  } else if (seedStart < sourceStart && seedMax <= sourceMax) { // Bottom
-    outliers.push([seedStart, (sourceStart - 1) - seedStart])
-    overlapped = { start: sourceStart, range: seedMax - sourceStart }
-  } else if (seedStart >= sourceStart && seedMax > sourceMax) { // Top
-    outliers.push([sourceMax + 1, seedMax - (sourceMax - 1)])
-    overlapped = { start: seedStart, range: sourceMax - seedStart }
-  } else if (seedStart < sourceStart && seedMax > sourceMax) { // All encompassing
-    outliers.push([seedStart, (sourceStart - 1) - seedStart]) // bottom
-    outliers.push([sourceMax + 1, seedMax - (sourceMax + 1)]) // top
+      // Keep the seed outliers falling through the current iteration
+      if (outliers && outliers.length) {
+        outliers.forEach((outlier) => {
+          if (currentCategory === "humidity-to-location" && i === currentCategoryMappings.length - 1) {
+            lowestRangeNumber = getLowerNum(lowestRangeNumber, outlier[0]);
+          } else {
+            const next = i === currentCategoryMappings.length - 1 ? categoryProgression[categoryProgression.indexOf(currentCategory) + 1] : currentCategory
+            seedRange.push([...outlier, next]);
+          }
+        })
+      }
+
+      // Map the overlapped numbers and break
+      if (overlapped) {
+        if (currentCategory === "humidity-to-location") {
+          lowestRangeNumber = getLowerNum(lowestRangeNumber, overlapped.start);
+        } else {
+          const nextCategory =categoryProgression[categoryProgression.indexOf(currentCategory) + 1];
+          seedRange.push([overlapped.start, overlapped.range, nextCategory]);
+        }
+        break;
+      }
+
+      if (currentCategory === "humidity-to-location" && i === currentCategoryMappings.length - 1) {
+        lowestRangeNumber = getLowerNum(lowestRangeNumber, currentSeedRange[0]);
+      } else if (i === currentCategoryMappings.length - 1) {
+        const nextCategory = categoryProgression[categoryProgression.indexOf(currentCategory) + 1];
+        seedRange.push([currentSeedRange[0], currentSeedRange[1], nextCategory]);
+      }
+    }
   }
 
-  return {
-    overLapped,
-    outliers: []
-  }
+  return lowestRangeNumber;
 }
 
-function isInRange() {
+function getInRangeSeeds(seedRangeNumbers, sourceRangeNumbers, destination) {
+  const [seedStart, seedRange] = seedRangeNumbers;
+  const [sourceStart, sourceRange] = sourceRangeNumbers;
+  const seedMax = seedStart + seedRange;
+  const sourceMax = sourceStart + sourceRange;
+  let outliers = [];
+  let overlapped = null;
 
+  // In between
+  if (seedStart >= sourceStart && seedMax <= sourceMax) {
+    // in between no outliers because everything is matched
+    overlapped = { start: destination + (seedStart - sourceStart), range: seedRange };
+  } else if (seedStart < sourceStart && seedMax <= sourceMax && seedMax >= sourceStart) { // Bottom
+    outliers.push([seedStart, (sourceStart - 1) - seedStart]);
+    overlapped = { start: destination, range: seedMax - sourceStart };
+  } else if (seedStart <= sourceMax && seedMax > sourceMax && sourceStart <= seedStart) { // Top
+    outliers.push([sourceMax + 1, seedMax - (sourceMax + 1)]);
+    overlapped = { start: destination + (seedStart - sourceStart), range: sourceMax - seedStart };
+  } else if (seedStart < sourceStart && seedMax > sourceMax) {
+    // Complete Overlap
+    outliers.push([seedStart, sourceStart - 1 - seedStart]); // bottom outlier
+    outliers.push([sourceMax + 1, seedMax - (sourceMax + 1)]); // top outlier
+    overlapped = { start: destination, range: sourceRange };
+  }
+
+  return { overlapped, outliers };
 }
 
 function getSeedRanges(seeds) {
@@ -117,6 +132,11 @@ function getSeedRanges(seeds) {
     seedRanges.push([+seeds[i - 1], +seeds[i]]);
   }
   return seedRanges;
+}
+
+function getLowerNum(baseNum, newNum) {
+  if (!baseNum) return newNum;
+  return Math.min(baseNum, newNum);
 }
 
 console.log(part2());
