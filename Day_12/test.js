@@ -39,12 +39,14 @@ const nextLocation = '#.#.###.....'
 function moveLeftToRight(start, end, str, offset) {
   const tracked = {}
   const group = str.slice(start, end + 1)
+  console.log('GROUP', group)
   let matches = 0
-  for(let i = start; i < str.length - end; i++) {
+  for(let i = start; i <= str.length - offset +1; i++) {
     console.log('????', i)
-    let base = new Array(str.length - offset).fill('.')
+    let base = new Array(str.length).fill('.')
+    base.splice(0, i, str.slice(0, start))
     base.splice(i, group.length, group)
-    let newCopy = base.join('') + str.slice(str.length - offset)
+    let newCopy = base.join('')
     console.log(newCopy)
 
     if (!tracked[newCopy]) {
@@ -55,4 +57,4 @@ function moveLeftToRight(start, end, str, offset) {
   }
 }
 
-console.log(moveLeftToRight(0, 6, nextLocation, 0))
+console.log(moveLeftToRight(4, 6, nextLocation, 4))
