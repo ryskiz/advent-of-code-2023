@@ -41,10 +41,11 @@ function moveLeftToRight(start, end, str, offset) {
   const group = str.slice(start, end + 1)
   console.log('GROUP', group)
   let matches = 0
-  for(let i = start; i <= str.length - offset +1; i++) {
+  for(let i = end; i <= str.length; i++) {
     console.log('????', i)
     let base = new Array(str.length).fill('.')
-    base.splice(0, i, str.slice(0, start))
+    base.splice(0, i - end, str.slice(0, start))
+    console.log('BASE', base)
     base.splice(i, group.length, group)
     let newCopy = base.join('')
     console.log(newCopy)
