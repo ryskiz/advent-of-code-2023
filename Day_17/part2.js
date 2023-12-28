@@ -1,4 +1,4 @@
-const part1 = (maxMoves, minMoves) => {
+const part2 = () => {
   for (let i = 0; i < lines.length; i++) {
     lines[i] = lines[i].split("");
   }
@@ -11,22 +11,24 @@ const part1 = (maxMoves, minMoves) => {
   while (queue.size()) {
     const currentNode = queue.dequeue();
     const neighbors = getNeighbors(currentNode);
-    if (currentNode.y === lines.length - 1 && currentNode.x === lines[0].length - 1 && currentNode.consecutiveMoves >= minMoves) {
+    if (currentNode.y === lines.length - 1 && currentNode.x === lines[0].length - 1 && currentNode.consecutiveMoves >= 4) {
       const sum = getPathSum(currentNode)
+      console.log('SUM', sum)
       if (sum < best) {
         best = sum
         foundNode = currentNode
+        break
       }
     }
 
     neighbors.forEach(({ cost, coords, direction }) => {
       const { x: nX, y: yX } = coords
       const nextConsecutive = direction === currentNode.lastDirection ? currentNode.consecutiveMoves + 1 : 1
-      const key = `${yX}-${nX}-${direction}-${nextConsecutive}`
       const currentCost = currentNode.costToMove;
       const costToMove = currentCost + cost; // Total cost to move to neighbor
-      const minCheck = direction !== currentNode.lastDirection ? nextConsecutive >= minMoves - 1 : true
-      if (costToMove < (visited[key] || Infinity) && (nextConsecutive <= maxMoves) && minCheck) {
+      const key = `${yX}-${nX}-${direction}-${nextConsecutive}`
+      const canMove = direction !== currentNode.lastDirection ? currentNode.consecutiveMoves >= 4 : true
+      if (costToMove < (visited[key] || Infinity) && nextConsecutive <= 10 && canMove) {
         visited[key] = costToMove
         queue.enqueue({ x: nX, y: yX, lastDirection: direction, consecutiveMoves: nextConsecutive, parent: currentNode, costToMove })
       }
@@ -119,4 +121,4 @@ class PriorityQueue {
   }
 }
 
-console.log(part1(10, 4));
+console.log(part2());
