@@ -1,11 +1,3 @@
-const lines = [
-  "???.### 1,1,3",
-  ".??..??...?##. 1,1,3",
-  "?#?#?#?#?#?#?#? 1,3,1,6",
-  "????.#...#... 4,1,1",
-  "????.######..#####. 1,6,5",
-  "?###???????? 3,2,1",
-];
 const part1 = () => {
   return lines.reduce((prev, curr) => (prev += getPermutations(curr)), 0);
 };
@@ -15,66 +7,57 @@ function getPermutations(line) {
 
   const sets = nums.split(",");
   const parsedSets = sets.map((n) => +n);
-  const validRegex = buildGroupRegex(parsedSets);
 
-  
+  return buildPermutations(locations, 0, parsedSets, locations);
+}
 
-  const knownSpotsRegex = buildKnownSpotsRegexStr(locations);
+function buildPermutations(str, index, groups, originalString) {
+  if (str.indexOf("?") === -1 && checkString(str, groups, originalString)) {
+    return 1;
+  }
 
-  const calculated = {};
-  let possibleLocations = 0;
-  for (let i = 0; i < sets.length; i++) {
-    const num = +sets[i];
-
-    possibleLocations *= getPossibleLocations(
-      trimmedLocations,
-      num,
-      i,
-      parsedSets
+  if (str[index] === "?") {
+    const p1 = str.split("");
+    const p2 = str.split("");
+    p1[index] = ".";
+    p2[index] = "#";
+    return (
+      buildPermutations(p1.join(""), index + 1, groups, originalString) +
+      buildPermutations(p2.join(""), index + 1, groups, originalString)
     );
-    calculated[num] = possibleLocations;
   }
-  return possibleLocations;
-}
 
-function buildKnownSpotsRegexStr(location) {
-  let regexStr = "";
-  for (let i = 0; i < location.length; i++) {
-    if (location[i] !== "?") {
-      regex += `\\${location[i]}`;
-    } else {
-      regex += ".";
+  for (let i = index; i < str.length; i++) {
+    if (str[i] === "?") {
+      const p1 = str.split("");
+      const p2 = str.split("");
+      p1[i] = ".";
+      p2[i] = "#";
+      return (
+        buildPermutations(p1.join(""), i + 1, groups, originalString) +
+        buildPermutations(p2.join(""), i + 1, groups, originalString)
+      );
     }
   }
-  return regexStr;
+
+  return 0;
 }
 
-function buildGroupRegexStr(sets) {
-  let regexStr = "";
-  for (let i = 0; i < sets.length; i++) {
-    regexStr += `#{${sets[i]}}${i === sets.length - 1 ? "" : `\\.+`}`;
+function checkString(str, groups, originalString) {
+  const parsed = str.split(".").filter((n) => !!n);
+  if (parsed.length !== groups.length) return false;
+
+  for (let i = 0; i < groups.length; i++) {
+    if (parsed[i].length !== groups[i]) return false;
   }
-  return regexStr;
-}
 
-function moveRightToLeft(start, end, str, offset) {
-  const tracked = {};
-  const group = str.slice(start, end + 1);
-  let matches = 0;
-  for (let i = start; i >= 0; i--) {
-    console.log("????", i);
-    let base = new Array(str.length - offset).fill(".");
-    base.splice(i, group.length, group);
-    let newCopy = base.join("");
-    newCopy += str.slice(str.length - offset);
-    console.log(newCopy);
-
-    if (!tracked[newCopy]) {
-      matches += 1;
+  for (let i = 0; i < str.length; i++) {
+    if (originalString[i] === "#" && str[i] !== "#") {
+      return false;
     }
-
-    tracked[newCopy] = true;
   }
+
+  return true;
 }
 
 console.log(part1());
